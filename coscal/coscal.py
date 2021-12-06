@@ -18,7 +18,7 @@ def set_corr_keys(operator):
     return key_dict
 
 
-def apply_corrections(data, operator, station_rigidity, data_keys):
+def apply_corrections(data, operator, station_rigidity, data_keys, beta=None):
     """
     main function for the corrections module. Takes data and an operator string, finds what corrections to apply and
     applies them
@@ -30,14 +30,14 @@ def apply_corrections(data, operator, station_rigidity, data_keys):
     # get the keys of data to correct
     correction_key_dict = set_corr_keys(operator)
     # get the correction factors
-    correction_factors = get_corr_factors(data, correction_key_dict, station_rigidity)
+    correction_factors = get_corr_factors(data, correction_key_dict, station_rigidity, beta)
     # correct the data
     for key in data_keys:
         data[key] = data[key] * correction_factors['p_corr'] * correction_factors['h_corr']
     return data
 
 
-def get_corr_factors(data, key_dict, station_rigidity):
+def get_corr_factors(data, key_dict, station_rigidity, beta=None):
     """
     takes some data and an operator and returns correction factors
     :param station_rigidity: cutoff rigidity of station taking measurements (GV)
@@ -46,7 +46,7 @@ def get_corr_factors(data, key_dict, station_rigidity):
     :return: dictionary containing the correction factors
     """
     if key_dict['p_corr'] is not None:
-        p_corr = pressure_correction(data[key_dict['p_corr']], station_rigidity)
+        p_corr = pressure_correction(data[key_dict['p_corr']], station_rigidity, beta)
     else:
         p_corr = np.full(len(data), 1)
 
@@ -60,7 +60,7 @@ def get_corr_factors(data, key_dict, station_rigidity):
     return ret_dict
 
 
-def pressure_correction(pressure, rigidity):
+def pressure_correction(pressure, rigidity, beta=None):
     """
     function to get pressure correction factors, given a pressure time series and rigidity value for the station
     :param pressure: time series of pressure values over the time of the data observations
@@ -68,12 +68,13 @@ def pressure_correction(pressure, rigidity):
     :return: series of correction factors
     """
     # p_0 = np.nanmean(pressure)
-    p_0 = 1013.25
-    pressure_diff = pressure - p_0
+    p_0 = 10*1013.25/9.81
+    pressure_diff = 10 * pressure/9.81 - p_0
     # g cm^-2. See Desilets & Zreda 2003
-    mass_attenuation_length = attenuation_length(p_0, rigidity)
+    if beta is None:
+        beta = attenuation_coefficient(p_0, rigidity)
 
-    exponent = pressure_diff * mass_attenuation_length
+    exponent = pressure_diff * beta
 
     pressure_corr = np.exp(exponent)
 
@@ -96,7 +97,7 @@ def humidity_correction(humidity):
     return hum_corr
 
 
-def attenuation_length(pressure, rigidity):
+def attenuation_coefficient(pressure, rigidity):
     """
 
     :param pressure:

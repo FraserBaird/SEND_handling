@@ -4,17 +4,17 @@ import pandas as pd
 import numpy as np
 
 
-def vert_subplots_2df(df1, df2, ks, c1, c2, fname, trim=False, ylab=['', '', '', '', ''], no_show=False, no_minor=False):
+def vert_subplots_2df(df1, df2, ks, c1, c2, fname, trim=False, ylab=['', '', '', '', ''], no_show=False, no_minor=True):
     n_plots = len(ks)
-    fig, axes = plt.subplots(n_plots, 1, figsize=(6, n_plots * 2), sharex=True)
+    fig, axes = plt.subplots(n_plots, 1, figsize=(6, n_plots * 1.5), sharex=True)
     for i in range(len(ks)):
         key = ks[i]
         ax = axes[i]
         x_arr = df1['DATE_TIME'].values
         y_arr_scat = df1[key].values
         y_arr_line = df2[key].values
-        ax.scatter(x_arr, y_arr_scat, color=c1[i], marker='.')
-        ax.plot(x_arr, y_arr_line, color=c2[i], linewidth=1)
+        ax.scatter(x_arr, y_arr_scat, color=c1, marker='.')
+        ax.plot(x_arr, y_arr_line, color=c2, linewidth=1)
         set_x_date_lims(trim, ax, x_arr)
         sort_date_ticks(ax, plt, no_minor)
         ax.set_ylabel(ylab[i])
@@ -56,19 +56,19 @@ def set_x_date_lims(trimmed, axis, x_array):
 def vert_subplots_1df_compare(df, k1, k2, c1, c2, fname, trim=False, ylab=['', '', '', '', '']):
 
     n_plots = len(k1)
-    fig, axes = plt.subplots(n_plots, 1, figsize=(6, n_plots * 2), sharex=True)
+    fig, axes = plt.subplots(n_plots, 1, figsize=(6, n_plots * 1.5), sharex=True)
     i: int
     for i in range(len(k1)):
         x_arr = df.index
         y_arr1 = df[k1[i]].values
         y_arr2 = df[k2[i]].values
         ax = axes[i]
-        ax.plot(x_arr, y_arr1, color=c1[i])
-        ax.plot(x_arr, y_arr2, color=c2[i])
+        ax.plot(x_arr, y_arr1, color=c1)
+        ax.plot(x_arr, y_arr2, color=c2)
 
         set_x_date_lims(trim, ax, x_arr)
 
-        sort_date_ticks(ax, plt)
+        sort_date_ticks(ax, plt, no_minor=True)
         ax.set_ylabel(ylab[i])
         ax.set_xlabel('Date')
 
@@ -81,13 +81,13 @@ def vert_subplots_1df_compare(df, k1, k2, c1, c2, fname, trim=False, ylab=['', '
 def vert_subplots_1df(df, keys, colours, fname, trim=False, ylab=['','','','',''], no_minor=False):
     # TODO generalise subplot routine
     n_plots = len(keys)
-    fig, axes = plt.subplots(n_plots, 1, figsize=(6, n_plots * 2), sharex=True)
+    fig, axes = plt.subplots(n_plots, 1, figsize=(6, n_plots * 1.5), sharex=True)
     i: int
     for i in range(len(keys)):
         x_arr = df.index
         y_arr1 = df[keys[i]].values
         ax = axes[i]
-        ax.scatter(x_arr, y_arr1, color=colours[i], marker='.')
+        ax.scatter(x_arr, y_arr1, color=colours, marker='.')
         set_x_date_lims(trim, ax, x_arr)
 
         sort_date_ticks(ax, plt, no_minor)

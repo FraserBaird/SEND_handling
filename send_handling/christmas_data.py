@@ -1,9 +1,7 @@
-import send_handling.live_data as send
+from send_handling import live_data as send
 import numpy as np
 import matplotlib.pyplot as plt
-import itertools as itt
-from scipy.stats import linregress
-import matplotlib.dates as dates
+
 
 def straight_line(x, m, c):
     return m * x + c

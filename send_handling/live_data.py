@@ -74,7 +74,7 @@ def import_data(filename, sample_period_str, suff):
     date_frame = read_file(filename, suff)
     date_frame.set_index('DATE_TIME', inplace=True)
     date_frame.sort_index(inplace=True)
-    date_frame = date_frame.resample(sample_period_str).asfreq()
+    # date_frame = date_frame.drop_duplicates().resample(sample_period_str).asfreq()
 
     return date_frame
 
@@ -244,14 +244,7 @@ def check_for_recent_data(df):
     # check if last data is within five minutes of the upload time
     if df.index[-1] < recent_ts:
         # if not check if there is data since the last data was uploaded
-        if df.index[-1] > last_ts_proc:
-            # send the appropriate error email
-            send_error_email(df.index[-1], True)
-
-        else:
-            # if no unprocessed data send the appropriate error email
-            send_error_email(df.index[-1])
-            # kill the program
+        if df.index[-1] <= last_ts_proc:
             exit(-1)
 
     return last_ts_proc
@@ -260,24 +253,30 @@ def check_for_recent_data(df):
 def correct_data(the_df):
     df = the_df.copy()
     corr_keys = cc.set_corr_keys('COSMOS-UK')
-    correction_factors = cc.get_corr_factors(df, corr_keys, 2.774)
+    correction_factors = cc.get_corr_factors(df, corr_keys, 2.774, beta=0.00701)
     df['P_CORR'] = correction_factors['p_corr']
     df['Q_CORR'] = correction_factors['h_corr']
-    df['CTS_MOD_CORR'] = df['CTS_MOD'] * df['P_CORR'] * df['Q_CORR']
-    df['CTS_UNMOD_CORR'] = df['CTS_UNMOD'] * df['P_CORR'] * df['Q_CORR']
-    df['CT_RATE_MOD_CORR'] = df['CT_RATE_MOD'] * df['P_CORR'] * df['Q_CORR']
-    df['CT_RATE_UNMOD_CORR'] = df['CT_RATE_UNMOD'] * df['P_CORR'] * df['Q_CORR']
+    df['CTS_MOD_CORR'] = df['CTS_MOD'] * df['P_CORR'] * 1
+    df['CTS_UNMOD_CORR'] = df['CTS_UNMOD'] * df['P_CORR'] * 1
+    df['CT_RATE_MOD_CORR'] = df['CT_RATE_MOD'] * df['P_CORR'] * 1
+    df['CT_RATE_UNMOD_CORR'] = df['CT_RATE_UNMOD'] * df['P_CORR'] * 1
     return df
+
+
+def get_corrected_data():
+    mod_df = import_df(mod=True, weather=False, first=True)
+    unmod_df = import_df(mod=False, weather=False, first=False)
+    weather_df = import_df(mod=False, weather=True, first=False)
+    raw_df = pd.concat((mod_df, unmod_df, weather_df), axis=1)
+    corr_df = correct_data(raw_df)
+    return corr_df
 
 
 def main():
     filepath = 'C:/Users/Fraser Baird/OneDrive - University of Surrey/Documents/data/SENDAuto'
     os.chdir(filepath)
-    mod_df = import_df(mod=True, weather=False, first=True)
-    unmod_df = import_df(mod=False, weather=False, first=False)
-    weather_df = import_df(mod=False, weather=True, first=False)
-    raw_df = pd.concat((mod_df, unmod_df, weather_df), axis=1)
-    corrected_df = correct_data(raw_df)
+
+    corrected_df = get_corrected_data()
     plot_keys = ['PA', 'TA', 'Q']
 
     for key in plot_keys:
